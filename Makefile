@@ -4,7 +4,7 @@ EXE= main
 
 
 $(EXE): main.cpp
-	g++ main.cpp -o $(EXE) $(LIBS)
+	$(CXX) main.cpp -o $(EXE) $(LIBS)
 
 .PHONY:
 	clear

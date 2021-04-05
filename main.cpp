@@ -2,59 +2,57 @@
 #include <SFML/Graphics.hpp>
 
 #include <SFML/Graphics/Color.hpp>
-#include <SFML/System/Time.hpp>
 #include <random>
 #include <vector>
-#include <iostream>
+#include <utility>
 
-struct RNG
+namespace 
 {
-    static int next_int(int min, int max)
+    struct RNG
     {
-        static std::random_device rd;
-        static std::mt19937 gen(rd());
-        static std::uniform_int_distribution<> rand(min, max);
-        return rand(gen);
+        static int next_int(int min, int max)
+        {
+            static std::random_device rd;
+            static std::mt19937 gen(rd());
+            static std::uniform_int_distribution<> rand(min, max);
+            return rand(gen);
+        }
+    };
+
+    // -.-
+    struct visualization_sortable_item_t
+    {
+        sf::RectangleShape shape;
+        int value;
+    };
+
+    typedef visualization_sortable_item_t s_item_t;
+
+    bool operator < (const s_item_t & a, const s_item_t & b)
+    {
+        return a.value < b.value;
     }
-};
 
-struct visualization_sortable_item_t
-{
-    sf::RectangleShape shape;
-    int value;
-
-    //void operator = (const visualization_sortable_item_t & other)
-    //{
-        //this->shape = other.shape;
-        //this->value = other.value;
-    //}
-};
-
-typedef visualization_sortable_item_t s_item_t;
-
-bool operator < (const s_item_t & a, const s_item_t & b)
-{
-    return a.value < b.value;
+    bool operator > (const s_item_t & a, const s_item_t & b)
+    {
+        return !(a < b);
+    }
 }
-
-bool operator > (const s_item_t & a, const s_item_t & b)
-{
-    return !(a < b);
-}
-
-typedef sf::RectangleShape RS;
 
 std::vector<s_item_t> s_items;
 
 const unsigned window_width = 1000;
 const unsigned window_height = 500;
 
-constexpr int quantity = window_width / 4;
+constexpr int quantity = window_width / 2;
 constexpr float width = window_width / (quantity);
 
-bool finished = false;
+const sf::Color default_color = sf::Color::White;
+const sf::Color first_hl_color = sf::Color::Green;
+const sf::Color second_hl_color = sf::Color::Yellow;
 
-void sort(std::vector<s_item_t> & items)
+template <typename T>
+void sort(std::vector<T> & items) // BUBBLE SORT
 {
     if (items.size() < 0) return;
 
@@ -68,105 +66,80 @@ void sort(std::vector<s_item_t> & items)
             auto & first = items[i - 1];
             auto & second = items[i];
 
-            // cambiar su color para identificarlos
-            first.shape.setFillColor(sf::Color::Green);
-            second.shape.setFillColor(sf::Color::Yellow);
+            // change colors
+            {
+                first.shape.setFillColor(first_hl_color);
+                second.shape.setFillColor(second_hl_color);
+            }
 
             sf::sleep(sf::microseconds(2));
 
             if(first > second)
             {
-                // hacer el swap y actualizar su posicion
+                // update position and swap
 
-                first.shape.setPosition((i) * width + 1, first.shape.getPosition().y);
+                first.shape.setPosition ((i) * width + 1,     first.shape.getPosition().y);
                 second.shape.setPosition((i - 1) * width + 1, second.shape.getPosition().y);
                 
                 std::swap(first, second);
-                //auto aux = first;
-                //first = second;
-                //second = aux;
 
                 n_size = i;
             }
 
             sf::sleep(sf::microseconds(2));
-
-            first.shape.setFillColor(sf::Color::White);
-            second.shape.setFillColor(sf::Color::White);
+            
+            // restore colors
+            {
+                first.shape.setFillColor(default_color);
+                second.shape.setFillColor(default_color);
+            }
         }
 
         n = n_size;
     }
-    finished = true;
-}
-
-void update()
-{
-    //static int index = 0;
-
-    //if(index > 0)
-        //s_items[index - 1].shape.setfillcolor(sf::color::white);
-
-    //if(index > s_items.size() - 1)
-        //index = 0;
-
-    //s_items[index].shape.setfillcolor(sf::color::green);
-
-    //++index;
-
-    //sf::sleep(sf::seconds(0.2f));
 }
 
 void run()
 {
-    if(!finished)
-        sort(s_items);
+    sort(s_items);
 
-    for(int i = 0; i < s_items.size(); ++i)
+    // floritura
     {
-        if(i > 0)
-            s_items[i - 1].shape.setFillColor(sf::Color::White);
-        
-        s_items[i].shape.setFillColor(sf::Color::Green);
-        sf::sleep(sf::milliseconds(10));
-    }
+        for(int i = 0; i < s_items.size(); ++i)
+        {
+            if(i > 0) s_items[i - 1].shape.setFillColor(default_color);
+            
+            s_items[i].shape.setFillColor(first_hl_color);
+            sf::sleep(sf::milliseconds(10));
+        }
 
-    s_items.back().shape.setFillColor(sf::Color::White);
+        s_items.back().shape.setFillColor(default_color);
+    }
 }
 
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(window_width, window_height), "SFML works!");
-     
-    // 20 cada uno de 10 de ancho 
 
     for(int i = 0; i < quantity; ++i)
     {
+        int random_number = RNG::next_int(1, window_height);
 
-        int v = RNG::next_int(1, window_height);
+        sf::Vector2f size       (width - 1,     (float)random_number);
+        sf::Vector2f position   (i * width + 1, window_height - random_number);
 
-        RS a({width - 2, (float)v});
-        a.setFillColor(sf::Color::White); 
-        a.setPosition(sf::Vector2f(i * width + 1, window_height - v));
+        sf::RectangleShape a(size);
+        a.setFillColor(default_color); 
+        a.setPosition(position);
 
-        s_item_t t {a, v};
+        s_item_t t {a, random_number};
 
         s_items.push_back(t);
     }
-    s_items.shrink_to_fit();
 
-    //std::sort(s_items.begin(), s_items.end(), [](auto a, auto b) {
-            //return a.value < b.value; });
-
-    // actualiza todas las posiciones despues de ordenar
-    //for(int i = 0; i < s_items.size(); ++i)
-    //{
-        //RS & s = s_items[i].shape;
-        //s.setPosition(i * width + 1, s.getPosition().y);
-    //}
-    std::cerr << "hola\n";
     sf::Thread t(run);
-    t.launch();
+    bool launched = false;
+
     do
     {
         sf::Event event;
@@ -176,15 +149,21 @@ int main()
                 window.close();
         }
 
-        //update();
+        if(!launched && sf::Keyboard::isKeyPressed(sf::Keyboard::R))
+        {
+            launched = true;
+            t.launch();
+        }
+
         window.clear();        
         for(const auto & rect : s_items)
         {
             window.draw(rect.shape);
         }
         window.display();
-        //render(window);
     }
     while(window.isOpen());
+    
+    // close thread
     t.terminate();
 }

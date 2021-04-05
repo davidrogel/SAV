@@ -1,6 +1,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Time.hpp>
 #include <random>
 #include <vector>
@@ -45,15 +46,15 @@ typedef sf::RectangleShape RS;
 
 std::vector<s_item_t> s_items;
 
-const unsigned window_width = 500;
+const unsigned window_width = 1000;
 const unsigned window_height = 500;
 
-int quantity = window_width / 10;
-float width = window_width / (quantity);
+constexpr int quantity = window_width / 4;
+constexpr float width = window_width / (quantity);
 
 bool finished = false;
 
-void sort(std::vector<s_item_t> & items, sf::RenderWindow & window)
+void sort(std::vector<s_item_t> & items)
 {
     if (items.size() < 0) return;
 
@@ -61,13 +62,6 @@ void sort(std::vector<s_item_t> & items, sf::RenderWindow & window)
 
     while(n >= 1)
     {
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if(event.type == sf::Event::Closed)
-                window.close();
-        }
-
         int n_size = 0;
         for(int i = 1; i <= n -1; ++i)
         {
@@ -78,6 +72,8 @@ void sort(std::vector<s_item_t> & items, sf::RenderWindow & window)
             first.shape.setFillColor(sf::Color::Green);
             second.shape.setFillColor(sf::Color::Yellow);
 
+            sf::sleep(sf::microseconds(2));
+
             if(first > second)
             {
                 // hacer el swap y actualizar su posicion
@@ -85,29 +81,19 @@ void sort(std::vector<s_item_t> & items, sf::RenderWindow & window)
                 first.shape.setPosition((i) * width + 1, first.shape.getPosition().y);
                 second.shape.setPosition((i - 1) * width + 1, second.shape.getPosition().y);
                 
-                //std::swap(first, second);
-                auto aux = first;
-                first = second;
-                second = aux;
+                std::swap(first, second);
+                //auto aux = first;
+                //first = second;
+                //second = aux;
 
                 n_size = i;
             }
-            
 
-            // dibujar
-            window.clear();        
-            for(const auto & rect : s_items)
-            {
-                window.draw(rect.shape);
-            }
-            window.display();
+            sf::sleep(sf::microseconds(2));
 
             first.shape.setFillColor(sf::Color::White);
             second.shape.setFillColor(sf::Color::White);
-            //sf::sleep(sf::milliseconds(25));
         }
-
-        //sf::sleep(sf::seconds(0.3f));
 
         n = n_size;
     }
@@ -131,7 +117,22 @@ void update()
     //sf::sleep(sf::seconds(0.2f));
 }
 
+void run()
+{
+    if(!finished)
+        sort(s_items);
 
+    for(int i = 0; i < s_items.size(); ++i)
+    {
+        if(i > 0)
+            s_items[i - 1].shape.setFillColor(sf::Color::White);
+        
+        s_items[i].shape.setFillColor(sf::Color::Green);
+        sf::sleep(sf::milliseconds(10));
+    }
+
+    s_items.back().shape.setFillColor(sf::Color::White);
+}
 
 int main()
 {
@@ -164,6 +165,8 @@ int main()
         //s.setPosition(i * width + 1, s.getPosition().y);
     //}
     std::cerr << "hola\n";
+    sf::Thread t(run);
+    t.launch();
     do
     {
         sf::Event event;
@@ -174,9 +177,14 @@ int main()
         }
 
         //update();
-        if(!finished)
-            sort(s_items, window); 
+        window.clear();        
+        for(const auto & rect : s_items)
+        {
+            window.draw(rect.shape);
+        }
+        window.display();
         //render(window);
     }
     while(window.isOpen());
+    t.terminate();
 }

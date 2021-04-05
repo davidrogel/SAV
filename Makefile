@@ -3,7 +3,7 @@ LIBS= -lsfml-graphics -lsfml-window -lsfml-system
 EXE= main
 
 
-all:
+$(EXE): main.cpp
 	g++ main.cpp -o $(EXE) $(LIBS)
 
 .PHONY:

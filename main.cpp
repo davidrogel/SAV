@@ -1,7 +1,6 @@
 
 #include <SFML/Graphics.hpp>
 
-#include <SFML/Graphics/Color.hpp>
 #include <random>
 #include <vector>
 #include <utility>
@@ -120,6 +119,7 @@ void run()
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(window_width, window_height), "SFML works!");
+    window.setFramerateLimit(60);
 
     for(int i = 0; i < quantity; ++i)
     {
